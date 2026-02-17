@@ -1,6 +1,9 @@
-import Tesseract from 'tesseract.js'
-
 export async function recognizeText(imageData: ImageData): Promise<string> {
+  if (typeof window === 'undefined') {
+    throw new Error('OCR is not supported on server')
+  }
+  // 动态导入 tesseract.js
+  const Tesseract = (await import('tesseract.js')).default
   const result = await Tesseract.recognize(imageData, 'eng+chi_sim', {
     logger: (m) => {
       if (m.status === 'recognizing text') {
@@ -12,6 +15,9 @@ export async function recognizeText(imageData: ImageData): Promise<string> {
 }
 
 export async function extractTextFromImage(imageFile: File): Promise<string> {
+  if (typeof window === 'undefined') {
+    throw new Error('OCR is not supported on server')
+  }
   const imageData = await fileToImageData(imageFile)
   return recognizeText(imageData)
 }

@@ -28,11 +28,21 @@ async function getFontkit() {
   }
 }
 
+// 检查是否可以使用中文字体
+export function canUseChineseFont(): boolean {
+  // 在服务器环境返回 false
+  return typeof window !== 'undefined'
+}
+
 // 字体缓存
 let cachedFont: PDFFont | null = null
 
 // 加载中文字体
 async function loadChineseFont(pdf: PDFDocument): Promise<PDFFont> {
+  if (typeof window === 'undefined') {
+    throw new Error('Chinese font loading is not supported on server')
+  }
+
   if (cachedFont) return cachedFont
 
   try {
