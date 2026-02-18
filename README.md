@@ -115,8 +115,8 @@ pdf-merger/
 │   │   └── index.ts        # TypeScript definitions
 │   └── index.css           # Tailwind styles
 ├── electron/
-│   ├── main.js             # Electron main process
-│   └── preload.js          # Electron preload script
+│   ├── main.cjs            # Electron main process
+│   └── preload.cjs         # Electron preload script
 ├── package.json
 ├── tsconfig.json
 └── vite.config.ts

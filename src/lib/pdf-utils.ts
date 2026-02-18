@@ -3,7 +3,7 @@ import type { PdfFile, MergeOptions } from '../types'
 import type { TocEntry } from './ai'
 
 // 字体文件路径
-const FONT_URL = '/fonts/NotoSansSC-Regular.woff2'
+const FONT_URL = './fonts/NotoSansSC-Regular.woff2'
 
 // fontkit 实例缓存
 let fontkitInstance: any = null
@@ -50,7 +50,8 @@ async function loadChineseFont(pdf: PDFDocument): Promise<PDFFont> {
     const fontkit = await getFontkit()
     ;(pdf as any).fontkit = fontkit
 
-    const fontUrl = new URL(FONT_URL, window.location.origin).toString()
+    // 使用相对路径 fetch 字体
+    const fontUrl = FONT_URL
     const response = await fetch(fontUrl)
 
     if (!response.ok) {

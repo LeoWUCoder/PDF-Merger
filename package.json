@@ -3,14 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "main": "electron/main.js",
+  "main": "electron/main.cjs",
+  "description": "一个智能的 PDF 合并工具，支持 AI 总结和目录生成",
+  "author": "Your Name <your.email@example.com>",
   "scripts": {
     "dev": "vite",
     "build": "node node_modules/typescript/lib/tsc.js && node node_modules/vite/bin/vite.js build",
     "preview": "vite preview",
     "postinstall": "chmod +x node_modules/.bin/* 2>/dev/null || true",
     "electron:dev": "electron .",
-    "electron:build": "electron-builder"
+    "electron:build": "electron-builder --win --x64"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
@@ -45,24 +47,29 @@
   "build": {
     "appId": "com.yourname.pdf-merger",
     "productName": "PDF 智能合并工具",
+    "asar": false,
     "directories": {
       "output": "release"
     },
     "files": [
       "dist/**/*",
-      "electron/**/*"
+      "electron/**/*",
+      "public/**/*"
     ],
+    "electronDownload": {
+      "mirror": "https://npmmirror.com/mirrors/electron/"
+    },
     "win": {
-      "target": "nsis",
-      "icon": "public/vite.svg"
+      "target": "dir",
+      "icon": "public/icon.ico"
     },
     "mac": {
       "target": "dmg",
-      "icon": "public/vite.svg"
+      "icon": "public/icon.ico"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "public/vite.svg"
+      "icon": "public/icon.ico"
     }
   }
 }

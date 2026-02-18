@@ -1,6 +1,6 @@
-# PDF Merger - AI 智能 PDF 合并工具
+# PDF 智能合并工具
 
-一个现代化的 Web 应用，支持 PDF 文件合并和 AI 智能摘要生成。基于 React、TypeScript 和 Vite 构建。
+一个现代化的桌面应用，支持 PDF 文件合并、AI 智能摘要和目录生成。基于 React、TypeScript、Vite 和 Electron 构建。
 
 ![PDF Merger](https://via.placeholder.com/800x400?text=PDF+Merger+Screenshot)
 
@@ -8,23 +8,32 @@
 
 - **拖拽上传** - 轻松上传多个 PDF 文件
 - **拖拽排序** - 通过直观的拖拽操作调整 PDF 顺序
-- **AI 文件名翻译** - 自动将中文文件名翻译为英文
-- **AI 摘要生成** - 使用 AI 为每个 PDF 生成英文摘要
-- **摘要页** - 在合并 PDF 开头创建多页摘要
+- **AI 中文摘要** - 使用 AI 为每个 PDF 生成中文摘要
+- **AI 中文目录** - 自动生成合并 PDF 的中文目录
+- **目录预览编辑** - 合并前查看和自定义目录
 - **自动旋转** - 自动旋转页面以获得更好的阅读体验
+- **离线支持** - 下载后可完全离线使用
 
-## 技术栈
+## 下载使用
 
-- **前端框架**: React 18 + TypeScript
-- **构建工具**: Vite 5
-- **样式方案**: Tailwind CSS
-- **PDF 处理**: pdf-lib, pdf.js
-- **AI 集成**: SiliconFlow API (Qwen2.5-7B-Instruct)
-- **拖拽组件**: @dnd-kit
+### Windows
+从 [GitHub Releases](https://github.com/你的用户名/pdf-merger/releases) 下载最新版本：
+- `PDF 智能合并工具.exe` - 便携版 (~170MB)，无需安装
 
-## 快速开始
+### macOS
+- `PDF-Merger.dmg` - 磁盘映像
 
-### 安装
+### Linux
+- `PDF-Merger.AppImage` - AppImage（无需安装）
+
+## 开发环境
+
+### 环境要求
+
+- Node.js 18+ 和 npm/pnpm
+- Git
+
+### 安装运行
 
 ```bash
 # 克隆仓库
@@ -36,71 +45,105 @@ npm install
 
 # 启动开发服务器
 npm run dev
+
+# 作为 Electron 桌面应用运行
+npm run electron:dev
 ```
 
-### API Key 配置
+### 构建生产版本
 
-本应用需要 SiliconFlow API Key 才能启用 AI 功能（翻译和摘要生成）。
+```bash
+# 构建 Web 版本
+npm run build
+
+# 构建 Electron 便携版
+npm run electron:build
+```
+
+构建产物位于 `release/` 目录。
+
+## API Key 配置
+
+本应用需要 SiliconFlow API Key 才能启用 AI 功能（摘要和目录生成）。
 
 1. **获取免费 API Key**: 访问 [SiliconFlow](https://siliconflow.cn) 注册免费账号
-2. **输入 API Key**: 在应用左侧边栏找到"API Key Configuration"面板
-3. **保存**: 点击"Save"将 API Key 保存到浏览器本地存储
+2. **输入 API Key**: 在应用左侧边栏找到"API Key 配置"面板
+3. **保存**: 点击"保存"将 API Key 保存到本地
 
-您的 API Key 仅存储在浏览器中，不会发送到我们的服务器。
+您的 API Key 仅存储在本地设备上，不会发送到我们的服务器。
 
 ## 使用方法
 
 1. **上传 PDF** - 拖拽 PDF 文件或点击浏览选择
 2. **配置 API Key** - 输入您的 SiliconFlow API Key 以启用 AI 功能
 3. **调整顺序** - 拖拽文件以更改合并后的顺序
-4. **生成摘要** - 点击"AI 摘要"翻译文件名并生成摘要
-5. **合并 PDF** - 点击"合并 PDF"创建合并文档
+4. **生成摘要** - 点击"生成中文摘要"为每个 PDF 生成中文摘要
+5. **生成目录** - 点击"生成中文目录"创建目录
+6. **编辑目录** - 合并前自定义目录（标题、页码）
+7. **合并下载** - 点击"合并下载"创建合并文档
+
+## 技术栈
+
+- **前端框架**: React 18 + TypeScript
+- **构建工具**: Vite 5
+- **桌面应用**: Electron 28
+- **样式方案**: Tailwind CSS
+- **PDF 处理**: pdf-lib, pdf.js, fontkit
+- **AI 集成**: SiliconFlow API (Qwen2.5-7B-Instruct)
+- **拖拽组件**: @dnd-kit
+- **OCR**: Tesseract.js
 
 ## 项目结构
 
 ```
 pdf-merger/
+├── public/
+│   └── fonts/
+│       └── NotoSansSC-Regular.woff2  # PDF 中文字体
 ├── src/
 │   ├── components/          # React 组件
 │   │   ├── App.tsx
 │   │   ├── ApiKeyPanel.tsx # API Key 输入组件
+│   │   ├── AiSummaryPanel.tsx
 │   │   ├── FileUploader.tsx
 │   │   ├── FileList.tsx
 │   │   └── MergeButton.tsx
 │   ├── lib/
-│   │   ├── ai.ts           # AI 翻译和摘要
-│   │   └── pdf-utils.ts    # PDF 处理工具
+│   │   ├── ai.ts           # AI 中文摘要和目录生成
+│   │   ├── pdf-utils.ts    # PDF 处理工具（含中文目录）
+│   │   └── ocr.ts          # OCR 文字识别
 │   ├── types/
 │   │   └── index.ts        # TypeScript 类型定义
 │   └── index.css           # Tailwind 样式
+├── electron/
+│   ├── main.cjs           # Electron 主进程
+│   └── preload.cjs        # Electron 预加载脚本
 ├── package.json
 ├── tsconfig.json
 └── vite.config.ts
 ```
 
-## 构建生产版本
-
-```bash
-# 构建项目
-npm run build
-
-# 预览生产构建
-npm run preview
-```
-
 ## API 集成
 
 本项目使用 SiliconFlow API 实现：
-1. **文件名翻译** - 中文转英文
-2. **摘要生成** - 创建简洁的英文摘要
+1. **中文摘要生成** - 从 PDF 内容创建简洁的中文摘要
+2. **中文目录生成** - 基于摘要自动生成目录
 
-使用的 AI 模型是 Qwen2.5-7B-Instruct，提供高质量的翻译和摘要。
+使用的 AI 模型是 Qwen2.5-7B-Instruct，提供高质量的中文文本生成。
+
+## 字体许可
+
+本项目包含 Noto Sans SC（思源黑体）字体用于 PDF 生成：
+- **字体**: Noto Sans SC
+- **许可**: OFL-1.1（开源字体许可）
+- **来源**: https://github.com/googlefonts/noto-cjk
 
 ## 隐私与安全
 
-- 您的 API Key 仅存储在浏览器的 localStorage 中
+- 您的 API Key 仅存储在本地设备上
 - API Key 不会被提交到 git 或分享给任何人
-- 所有 API 调用直接从您的浏览器发送到 SiliconFlow
+- 所有 API 调用直接从您的设备发送到 SiliconFlow
+- 不会收集或向第三方服务器发送数据
 
 ## 开源许可
 

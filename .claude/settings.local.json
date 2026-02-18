@@ -5,7 +5,11 @@
       "Bash(npm install)",
       "Bash(npm config get:*)",
       "Bash(npm config get package-lock)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(pip show:*)",
+      "Bash(pip install:*)",
+      "Bash(python3:*)",
+      "Bash(ls:*)"
     ]
   }
 }

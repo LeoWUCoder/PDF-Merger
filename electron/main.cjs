@@ -1,9 +1,22 @@
 const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron')
 const path = require('path')
 
+// 获取应用根目录
+function getAppPath() {
+  if (app.isPackaged) {
+    // 打包后的应用 - 资源在 asar 中
+    // __dirname 在 asar 中指向 app.asar 内部
+    return path.join(__dirname, '..')
+  }
+  // 开发模式
+  return path.join(__dirname, '..')
+}
+
 let mainWindow
 
 function createWindow() {
+  const appPath = getAppPath()
+
   // 创建浏览器窗口
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -11,25 +24,39 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     title: 'PDF 智能合并工具',
-    icon: path.join(__dirname, '../public/vite.svg'),
+    icon: path.join(appPath, 'public/icon.ico'),
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(appPath, 'electron/preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: true
+      sandbox: false
     },
     autoHideMenuBar: false,
     backgroundColor: '#ffffff'
   })
 
-  // 加载应用
-  const startUrl = process.env.ELECTRON_START_URL || `file://${path.join(__dirname, '../dist/index.html')}`
-  mainWindow.loadURL(startUrl)
+  // 加载应用 - 使用 file:// 协议
+  const indexPath = path.join(appPath, 'dist/index.html')
+  const indexUrl = `file://${indexPath.replace(/\\/g, '/')}`
+  console.log('Loading index from:', indexUrl)
 
-  // 开发模式下打开开发者工具
   if (process.env.ELECTRON_START_URL) {
-    mainWindow.webContents.openDevTools()
+    mainWindow.loadURL(process.env.ELECTRON_START_URL)
+  } else {
+    mainWindow.loadURL(indexUrl)
   }
+
+  // 始终打开开发者工具以便调试
+  mainWindow.webContents.openDevTools()
+
+  // 监听页面加载错误
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('Failed to load:', errorCode, errorDescription)
+  })
+
+  mainWindow.webContents.on('console-message', (event, level, message) => {
+    console.log('Console:', message)
+  })
 
   // 处理窗口关闭
   mainWindow.on('closed', () => {
@@ -119,7 +146,6 @@ function createMenu() {
 
 // 应用准备就绪
 app.whenReady().then(() => {
-  createWindow()
   createWindow()
 
   app.on('activate', () => {
