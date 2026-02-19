@@ -31,3 +31,10 @@ yarn-error.log*
 
 # Electron
 *.exe
+
+# Claude
+.claude/
+
+# Server
+server/outputs/
+uploads/

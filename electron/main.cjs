@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron')
 const path = require('path')
+const { spawn } = require('child_process')
 
 // 获取应用根目录
 function getAppPath() {
@@ -13,6 +14,55 @@ function getAppPath() {
 }
 
 let mainWindow
+let serverProcess = null
+
+// 启动后端转换服务
+function startConverterServer() {
+  const appPath = getAppPath()
+
+  // 查找服务器入口文件
+  const serverPath = path.join(appPath, 'server', 'index.ts')
+
+  // 使用 tsx 或 ts-node 运行 TypeScript 服务器
+  // 或者使用编译后的 JavaScript
+  let serverCmd = 'npx'
+  let serverArgs = ['tsx', serverPath]
+
+  // 如果在开发模式下运行
+  if (process.env.ELECTRON_START_URL) {
+    console.log('开发模式: 转换服务需要在独立终端启动')
+    console.log(`运行: cd server && npm run dev`)
+    return
+  }
+
+  // 打包后的模式
+  try {
+    serverProcess = spawn(serverCmd, serverArgs, {
+      env: { ...process.env, PORT: 3001 },
+      stdio: 'pipe'
+    })
+
+    serverProcess.stdout.on('data', (data) => {
+      console.log(`[转换服务] ${data}`)
+    })
+
+    serverProcess.stderr.on('data', (data) => {
+      console.error(`[转换服务错误] ${data}`)
+    })
+
+    serverProcess.on('error', (error) => {
+      console.error('[转换服务启动失败]', error)
+    })
+
+    serverProcess.on('close', (code) => {
+      if (code !== 0 && code !== null) {
+        console.log(`[转换服务退出] 退出码: ${code}`)
+      }
+    })
+  } catch (error) {
+    console.error('启动转换服务失败:', error)
+  }
+}
 
 function createWindow() {
   const appPath = getAppPath()
@@ -45,9 +95,6 @@ function createWindow() {
   } else {
     mainWindow.loadURL(indexUrl)
   }
-
-  // 始终打开开发者工具以便调试
-  mainWindow.webContents.openDevTools()
 
   // 监听页面加载错误
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
@@ -147,6 +194,7 @@ function createMenu() {
 // 应用准备就绪
 app.whenReady().then(() => {
   createWindow()
+  startConverterServer()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -157,8 +205,19 @@ app.whenReady().then(() => {
 
 // 所有窗口关闭时退出
 app.on('window-all-closed', () => {
+  // 关闭服务器进程
+  if (serverProcess) {
+    serverProcess.kill()
+  }
   if (process.platform !== 'darwin') {
     app.quit()
+  }
+})
+
+// 应用退出时关闭服务器
+app.on('will-quit', () => {
+  if (serverProcess) {
+    serverProcess.kill()
   }
 })
 

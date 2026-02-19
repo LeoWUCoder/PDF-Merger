@@ -1,8 +1,18 @@
-import { useState, useCallback } from 'react'
-import { Sparkles, Loader2, Check, List, Trash2, Plus, ChevronDown, ChevronUp } from 'lucide-react'
-import { generateBatchSummaries, generateChineseTOC, type TocEntry } from '../lib/ai'
+import { useState, useCallback, useEffect } from 'react'
+import { Sparkles, Loader2, Check, List, Trash2, Plus, ChevronDown, ChevronUp, Settings } from 'lucide-react'
+import { generateBatchSummaries, generateChineseTOC, setAiModel, getAiModel, type TocEntry } from '../lib/ai'
 import type { PdfFile, MergeOptions } from '../types'
 import { cn } from '../lib/utils'
+
+// 可选文本模型列表
+const TEXT_MODELS = [
+  { value: 'Qwen/Qwen2.5-7B-Instruct', label: 'Qwen2.5-7B (推荐)' },
+  { value: 'Qwen/Qwen2.5-3B-Instruct', label: 'Qwen2.5-3B' },
+  { value: 'Qwen/Qwen2-7B-Instruct', label: 'Qwen2-7B' },
+  { value: 'Qwen/Qwen2-1.5B-Instruct', label: 'Qwen2-1.5B' },
+  { value: 'deepseek-ai/DeepSeek-V2', label: 'DeepSeek-V2' },
+  { value: '01-ai/Yi-1.5-9B-Chat', label: 'Yi-1.5-9B' },
+]
 
 interface AiSummaryPanelProps {
   files: PdfFile[]
@@ -19,6 +29,25 @@ export function AiSummaryPanel({ files, onUpdateFile, onUpdateOptions, tocEntrie
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set())
   const [editableToc, setEditableToc] = useState<TocEntry[]>([])
   const [showTocEditor, setShowTocEditor] = useState(false)
+  const [selectedModel, setSelectedModel] = useState<string>('')
+  const [showModelSelect, setShowModelSelect] = useState(false)
+
+  // 加载已保存的模型
+  useEffect(() => {
+    const savedModel = getAiModel()
+    if (savedModel) {
+      setSelectedModel(savedModel)
+    } else {
+      setSelectedModel(TEXT_MODELS[0].value)
+    }
+  }, [])
+
+  // 切换模型
+  const handleModelChange = (model: string) => {
+    setAiModel(model)
+    setSelectedModel(model)
+    setShowModelSelect(false)
+  }
 
   const handleGenerateSummaries = useCallback(async () => {
     if (files.length === 0 || isGeneratingSummary) return
@@ -124,6 +153,40 @@ export function AiSummaryPanel({ files, onUpdateFile, onUpdateOptions, tocEntrie
         <span className="text-sm text-gray-500">
           {files.length} 个文件
         </span>
+      </div>
+
+      {/* 模型选择 */}
+      <div className="relative mb-4">
+        <button
+          onClick={() => setShowModelSelect(!showModelSelect)}
+          className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm hover:bg-gray-100 transition-colors"
+        >
+          <span className="text-gray-700">
+            模型: <span className="font-medium text-purple-600">
+              {TEXT_MODELS.find(m => m.value === selectedModel)?.label || selectedModel}
+            </span>
+          </span>
+          <Settings className="w-4 h-4 text-gray-400" />
+        </button>
+
+        {showModelSelect && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+            {TEXT_MODELS.map((model) => (
+              <button
+                key={model.value}
+                onClick={() => handleModelChange(model.value)}
+                className={cn(
+                  'w-full px-3 py-2 text-left text-sm hover:bg-gray-100 transition-colors',
+                  model.value === selectedModel
+                    ? 'bg-purple-50 text-purple-600 font-medium'
+                    : 'text-gray-700'
+                )}
+              >
+                {model.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="space-y-3">

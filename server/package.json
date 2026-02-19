@@ -1,0 +1,20 @@
+{
+  "name": "pdf-merger-server",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "start": "node index.ts",
+    "dev": "node --watch index.ts"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "docx": "^8.5.0",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.8.69",
+    "sharp": "^0.33.0",
+    "uuid": "^9.0.1"
+  }
+}

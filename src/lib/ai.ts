@@ -1,21 +1,71 @@
-import * as pdfjsLib from 'pdfjs-dist'
-
-// 设置 pdf.js worker
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
-}
-
 // ============================================
 // AI API Configuration
 // ============================================
 
+const API_BASE = '/api'
+
 // SiliconFlow API (Free tier available)
 const SILICONFLOW_API_URL = 'https://api.siliconflow.cn/v1/chat/completions'
-const SILICONFLOW_MODEL = 'Qwen/Qwen2.5-7B-Instruct'
 
 // Ollama local model
 const OLLAMA_API_URL = 'http://localhost:11434/api/generate'
 const OLLAMA_MODEL = 'qwen2.5:7b'
+
+// SiliconFlow 上的视觉模型列表（用户可以选择）
+export const VISION_MODELS = [
+  'Qwen/Qwen3-VL-32B-Instruct',
+  'Qwen/Qwen2-VL-7B-Instruct',
+  'Qwen/Qwen-VL-Max-Instruct',
+  'Qwen/Qwen-VL-Plus-Instruct',
+]
+
+// 普通文本模型列表 - 用于PDF合并的AI摘要和目录生成
+export const TEXT_MODELS = [
+  'Qwen/Qwen2.5-7B-Instruct',
+  'Qwen/Qwen2.5-3B-Instruct',
+  'meta-llama/Llama-3.3-70B-Instruct',
+  'deepseek-ai/DeepSeek-V3',
+]
+
+// 所有可用模型
+export const ALL_MODELS = [
+  ...VISION_MODELS.map(m => ({ id: m, name: m, type: 'vision' as const })),
+  ...TEXT_MODELS.map(m => ({ id: m, name: m, type: 'text' as const })),
+]
+
+// 默认视觉模型 - 用于格式转换（支持扫描版PDF）
+let currentVisionModel: string = 'Qwen/Qwen3-VL-32B-Instruct'
+
+// 默认文本模型 - 用于PDF合并（摘要、目录等）
+let currentTextModel: string = 'Qwen/Qwen2.5-7B-Instruct'
+
+export function setAiModel(name: string) {
+  // 根据模型类型设置
+  if (isVisionModel(name)) {
+    currentVisionModel = name
+  } else {
+    currentTextModel = name
+  }
+}
+
+export function getAiModel(): string {
+  return currentVisionModel
+}
+
+// 获取格式转换用的视觉模型
+export function getVisionModel(): string {
+  return currentVisionModel
+}
+
+// 获取文本处理用的模型（摘要、目录等）
+export function getTextModel(): string {
+  return currentTextModel
+}
+
+// 检查是否为视觉模型
+export function isVisionModel(model: string): boolean {
+  return model.toLowerCase().includes('vl') || model.toLowerCase().includes('vision')
+}
 
 type Provider = 'siliconflow' | 'ollama'
 const USE_PROVIDER: Provider = 'siliconflow'
@@ -51,7 +101,7 @@ function getApiConfig(): ApiConfig {
       return {
         url: SILICONFLOW_API_URL,
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        model: SILICONFLOW_MODEL,
+        model: getTextModel(), // 使用文本模型（用于摘要和目录）
         isOpenAiFormat: true
       }
     case 'ollama':
@@ -86,19 +136,20 @@ export interface TocEntry {
 
 export async function extractTextFromPdf(file: File): Promise<string> {
   try {
-    const arrayBuffer = await file.arrayBuffer()
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
-    const maxPages = Math.min(pdf.numPages, 5)
-    let fullText = ''
+    const formData = new FormData()
+    formData.append('file', file)
 
-    for (let i = 1; i <= maxPages; i++) {
-      const page = await pdf.getPage(i)
-      const textContent = await page.getTextContent()
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ')
-      fullText += pageText + '\n'
+    const res = await fetch(`${API_BASE}/extract-pdf-text`, {
+      method: 'POST',
+      body: formData
+    })
+
+    if (!res.ok) {
+      throw new Error('提取 PDF 文本失败')
     }
+
+    const data = await res.json()
+    const fullText = data.text || ''
 
     if (fullText.length < 100) {
       console.log(`PDF "${file.name}" has little text`)
